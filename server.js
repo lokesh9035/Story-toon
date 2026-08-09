@@ -13,7 +13,19 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const jobs = new Map();
 
+// Parse JSON bodies for API routes
 app.use(express.json({ limit: "1mb" }));
+
+// Simple request logging for API routes
+app.use('/api', (req, res, next) => {
+  res.on('finish', () => {
+    // Log METHOD PATH STATUS
+    console.log(`${req.method} ${req.originalUrl} ${res.statusCode}`);
+  });
+  next();
+});
+
+// Serve static frontend
 app.use(express.static("public"));
 
 function openai() {
@@ -136,6 +148,11 @@ Use original characters and original environments. No logos, no existing franchi
   }
 }
 
+// Health endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, service: 'storytoon-ai' });
+});
+
 app.post("/api/generate", (req, res) => {
   const story = String(req.body?.story || "").trim();
   if (story.length < 10) return res.status(400).json({ error: "Enter a story of at least 10 characters." });
@@ -162,6 +179,20 @@ app.get("/api/jobs/:id", (req, res) => {
     scenes: job.plan?.scenes,
     video: job.video
   });
+});
+
+// Catch-all for API routes - always return JSON
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API route not found', path: req.originalUrl });
+});
+
+// Error handler for API routes to ensure JSON errors
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  if (req.originalUrl && req.originalUrl.startsWith('/api')) {
+    return res.status(500).json({ error: err?.message || 'Internal server error' });
+  }
+  next(err);
 });
 
 app.get("/video/:id", async (req, res) => {
