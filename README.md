@@ -1,52 +1,29 @@
-# StoryToon AI — Android-friendly cloud version
+# StoryToon — Free Browser Cartoon Generator
 
-This version is designed so the user can operate the generator entirely from an Android browser.
+This is a free, browser-only 2D cartoon generator. All animation, text-to-speech, and video recording run in the user's browser — no OpenAI, no paid APIs, and no server-side video generation.
 
-## What changed
+Highlights
+- Completely free to use; no API keys required.
+- Runs entirely in the browser (HTML Canvas + Web Speech API + MediaRecorder).
+- Works on Android Chrome and modern desktop browsers.
+- Simple Express server included to host static files and provide a health endpoint.
 
-- No Node.js or FFmpeg installation on the phone.
-- A long-running Node server handles jobs.
-- Uses OpenAI's video generation API (`sora-2` by default).
-- Generates multiple short clips from one story.
-- Polls the job from the mobile browser.
-- Uses FFmpeg on the server to concatenate clips.
-- API key stays server-side.
+How it works
+- User enters a story on the site.
+- The client splits the story into a set of scenes in-browser.
+- Each scene is rendered and animated on an HTML Canvas with characters, camera moves, speech bubbles, and transitions.
+- The Web Speech API speaks dialogue when available.
+- MediaRecorder records the Canvas output to WebM for download.
 
-OpenAI's current video API supports `sora-2` and `sora-2-pro`, with 4/8/12 second clips and 16:9 output supported by the API. Sora 2 is described as video generation with synced audio.
+Deploying
+1. Push to GitHub.
+2. Deploy to any static/Node host (Render, Vercel, Netlify, your own VPS). For Render, the `render.yaml` provided will run the Express server.
+3. No env vars or keys needed.
 
-## Deploy with Render
+Local testing
+- npm install
+- npm start
+- Open http://localhost:3000 on your Android device or browser.
 
-1. Create a GitHub repository and upload this project.
-2. Create a new Web Service on Render and connect the repository.
-3. Render detects `render.yaml`, or use:
-   - Build command: `npm install`
-   - Start command: `npm start`
-4. Add environment variable:
-   `OPENAI_API_KEY` = your API key.
-5. Deploy.
-6. Open the Render URL on Android.
-7. Enter a story and tap Generate cartoon.
-
-## Important
-
-Video generation is asynchronous and can take time. The browser polls the server, so you can leave the page open while the job runs.
-
-The server keeps generated files on its local disk and jobs in memory. This is fine for a starter/demo deployment but not for a production service with many users.
-
-For production, add:
-- Redis/queue
-- Postgres job records
-- S3/R2/GCS object storage
-- user accounts
-- usage limits
-- authentication
-- automatic cleanup
-- moderation
-- retry handling
-- a worker service
-
-## API access
-
-Your OpenAI project must have access to the video model you select. If `sora-2` is unavailable to your project, change `VIDEO_MODEL` to a model your project can use.
-
-Never put the OpenAI key in browser JavaScript or a `NEXT_PUBLIC_*` variable.
+License & style
+- Original cartoon visuals are used; no imitation of copyrighted shows.
