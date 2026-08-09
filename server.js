@@ -12,10 +12,12 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true, service: "storytoon-free" });
 });
 
-// SPA fallback — serve index.html for any other route
-app.get("*", (req, res) => {
-  res.sendFile(path.join(process.cwd(), "public", "index.html"));
+// API catch-all for unmatched /api routes (Express 5 compatible)
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'API route not found', path: req.originalUrl });
 });
+
+// Note: no general wildcard routes (no '*' or '/*') — static file serving handles the site root
 
 app.listen(PORT, () => {
   console.log(`StoryToon free server running on port ${PORT}`);
