@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090b10">
+<title>StoryToon AI</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#090b10;color:#f7f8fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{width:min(900px,100%);margin:auto;padding:28px 16px 60px}.pill{display:inline-block;border:1px solid #303644;border-radius:999px;padding:7px 11px;font-size:11px;letter-spacing:2px}
+h1{font-size:clamp(42px,12vw,78px);line-height:.94;margin:22px 0 14px;letter-spacing:-3px}
+.lead{color:#aeb6c5;font-size:16px;line-height:1.6}
+textarea{width:100%;min-height:190px;margin-top:24px;border:1px solid #303644;background:#11151d;color:#fff;border-radius:18px;padding:17px;font-size:16px;line-height:1.5;outline:none}
+button{width:100%;margin-top:12px;padding:17px;border:0;border-radius:14px;font-weight:800;font-size:16px;background:#fff;color:#090b10}
+button:disabled{opacity:.5}
+.card{margin-top:18px;border:1px solid #292e39;background:#10131a;border-radius:18px;padding:18px}
+.bar{height:9px;background:#242936;border-radius:99px;overflow:hidden;margin-top:12px}.fill{height:100%;width:0;background:#fff;transition:width .4s}
+video{width:100%;margin-top:14px;border-radius:14px;background:#000}.download{display:block;text-align:center;margin-top:12px;padding:14px;border:1px solid #3b4250;border-radius:12px;color:#fff;text-decoration:none}
+.small{font-size:13px;color:#8f98a9}.scene{padding:12px 0;border-bottom:1px solid #292e39}.scene:last-child{border:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="pill">STORYTOON AI</span>
+  <h1>Story → cartoon video.</h1>
+  <div class="lead">Write a story on your phone. The server turns it into original 2D sci-fi cartoon scenes with generated audio and joins them into one MP4.</div>
+
+  <textarea id="story" placeholder="A young inventor opens a portal in his bedroom and discovers a strange planet where every object can talk..."></textarea>
+  <button id="go">Generate cartoon</button>
+
+  <div id="status" class="card" hidden>
+    <strong id="msg">Starting...</strong>
+    <div class="bar"><div id="fill" class="fill"></div></div>
+    <div class="small" id="percent">0%</div>
+  </div>
+
+  <div id="result" class="card" hidden>
+    <h2 id="title">Your video</h2>
+    <video id="video" controls playsinline></video>
+    <a id="download" class="download">Download MP4</a>
+    <div id="scenes"></div>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+async function start(){
+  const story=$("story").value.trim();
+  if(story.length<10){alert("Please enter a longer story.");return}
+  $("go").disabled=true;$("status").hidden=false;$("result").hidden=true;
+  try{
+    const r=await fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({story})});
+    const d=await r.json(); if(!r.ok) throw new Error(d.error||"Could not start");
+    poll(d.jobId);
+  }catch(e){$("msg").textContent=e.message;$("go").disabled=false}
+}
+async function poll(id){
+  const r=await fetch("/api/jobs/"+id); const d=await r.json();
+  $("msg").textContent=d.message||d.status;
+  $("fill").style.width=(d.progress||0)+"%"; $("percent").textContent=(d.progress||0)+"%";
+  if(d.status==="completed"){
+    $("video").src=d.video; $("download").href=d.video; $("download").download="storytoon.mp4";
+    $("title").textContent=d.title||"Your video";
+    $("result").hidden=false; $("go").disabled=false;
+    $("scenes").innerHTML=(d.scenes||[]).map((s,i)=>`<div class="scene"><b>Scene ${i+1}: ${s.title}</b><div class="small">${s.dialogue||""}</div></div>`).join("");
+    return;
+  }
+  if(d.status==="failed"){ $("go").disabled=false; return; }
+  setTimeout(()=>poll(id),5000);
+}
+$("go").onclick=start;
+</script>
+</body>
+</html>
