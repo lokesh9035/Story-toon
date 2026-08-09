@@ -1,72 +1,308 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090b10">
-<title>StoryToon AI</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>StoryToon — Free Cartoon Generator</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#090b10;color:#f7f8fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-.wrap{width:min(900px,100%);margin:auto;padding:28px 16px 60px}.pill{display:inline-block;border:1px solid #303644;border-radius:999px;padding:7px 11px;font-size:11px;letter-spacing:2px}
-h1{font-size:clamp(42px,12vw,78px);line-height:.94;margin:22px 0 14px;letter-spacing:-3px}
-.lead{color:#aeb6c5;font-size:16px;line-height:1.6}
-textarea{width:100%;min-height:190px;margin-top:24px;border:1px solid #303644;background:#11151d;color:#fff;border-radius:18px;padding:17px;font-size:16px;line-height:1.5;outline:none}
-button{width:100%;margin-top:12px;padding:17px;border:0;border-radius:14px;font-weight:800;font-size:16px;background:#fff;color:#090b10}
-button:disabled{opacity:.5}
-.card{margin-top:18px;border:1px solid #292e39;background:#10131a;border-radius:18px;padding:18px}
-.bar{height:9px;background:#242936;border-radius:99px;overflow:hidden;margin-top:12px}.fill{height:100%;width:0;background:#fff;transition:width .4s}
-video{width:100%;margin-top:14px;border-radius:14px;background:#000}.download{display:block;text-align:center;margin-top:12px;padding:14px;border:1px solid #3b4250;border-radius:12px;color:#fff;text-decoration:none}
-.small{font-size:13px;color:#8f98a9}.scene{padding:12px 0;border-bottom:1px solid #292e39}.scene:last-child{border:0}
+  :root{
+    --bg:#071024; --card:#0f1724; --muted:#9aa6ba; --accent:#ffd166; --white:#f7fbff;
+  }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#041018);color:var(--white);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  .app{max-width:1000px;margin:22px auto;padding:20px}
+  header{display:flex;align-items:center;gap:16px}
+  .logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#ff9f1c,#ff5c8a);display:flex;align-items:center;justify-content:center;font-weight:900;color:#071024;font-size:20px}
+  h1{margin:0;font-size:28px}
+  .top{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+  .left{flex:1;min-width:320px}
+  .right{width:520px;min-width:300px}
+  textarea{width:100%;height:180px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.06);background:#071422;color:var(--white);resize:vertical;box-shadow:inset 0 1px 0 rgba(255,255,255,0.02)}
+  .controls{display:flex;gap:10px;margin-top:10px}
+  button{background:var(--accent);border:0;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer}
+  button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--white)}
+  .card{background:var(--card);border-radius:12px;padding:12px;border:1px solid rgba(255,255,255,0.03)}
+  .canvas-wrap{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+  canvas{width:100%;height:auto;border-radius:10px;background:#000}
+  .toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:8px}
+  .small{font-size:13px;color:var(--muted)}
+  .scene-list{margin-top:10px;max-height:160px;overflow:auto;padding:6px;border-radius:8px;background:rgba(255,255,255,0.02)}
+  .scene{padding:8px;border-bottom:1px solid rgba(255,255,255,0.02);font-size:14px}
+  .footer{margin-top:18px;color:var(--muted);font-size:13px}
+  a.link{color:var(--accent);text-decoration:none}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <span class="pill">STORYTOON AI</span>
-  <h1>Story → cartoon video.</h1>
-  <div class="lead">Write a story on your phone. The server turns it into original 2D sci-fi cartoon scenes with generated audio and joins them into one MP4.</div>
+  <div class="app">
+    <header>
+      <div class="logo">ST</div>
+      <div>
+        <h1>StoryToon — Free Cartoon Generator</h1>
+        <div class="small">Create quick 2D cartoon videos in your browser — free, private, and works on Android Chrome.</div>
+      </div>
+    </header>
 
-  <textarea id="story" placeholder="A young inventor opens a portal in his bedroom and discovers a strange planet where every object can talk..."></textarea>
-  <button id="go">Generate cartoon</button>
+    <div class="top" style="margin-top:14px">
+      <div class="left card">
+        <label class="small">Enter a short story (3–6 scenes recommended):</label>
+        <textarea id="storyInput" placeholder="A shy inventor opens a glowing door in their closet and finds a city of tiny robots..."></textarea>
+        <div class="controls">
+          <button id="generateBtn">Generate & Preview</button>
+          <button id="playBtn" class="secondary">Play</button>
+          <button id="pauseBtn" class="secondary">Pause</button>
+          <button id="restartBtn" class="secondary">Restart</button>
+          <button id="recordBtn" class="secondary">Record</button>
+          <a id="downloadLink" class="link" style="display:inline-block;padding:10px 12px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);text-decoration:none;color:var(--accent)">Download</a>
+        </div>
 
-  <div id="status" class="card" hidden>
-    <strong id="msg">Starting...</strong>
-    <div class="bar"><div id="fill" class="fill"></div></div>
-    <div class="small" id="percent">0%</div>
+        <div class="small" style="margin-top:8px">Speech: <span id="speechStatus">ready</span></div>
+
+        <div style="margin-top:12px">
+          <div class="small">Scenes</div>
+          <div id="scenes" class="scene-list"></div>
+        </div>
+      </div>
+
+      <div class="right card">
+        <div class="canvas-wrap">
+          <canvas id="stage" width="1280" height="720"></canvas>
+          <div class="toolbar">
+            <div class="small">Preview (Canvas)</div>
+            <div class="small">Use Play/Pause/Record. Recording saves a WebM file.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">Built with Canvas, Web Speech API, and MediaRecorder — no external services. <a href="/api/health" class="link">Health</a></div>
   </div>
 
-  <div id="result" class="card" hidden>
-    <h2 id="title">Your video</h2>
-    <video id="video" controls playsinline></video>
-    <a id="download" class="download">Download MP4</a>
-    <div id="scenes"></div>
-  </div>
-</div>
 <script>
-const $=id=>document.getElementById(id);
-async function start(){
-  const story=$("story").value.trim();
-  if(story.length<10){alert("Please enter a longer story.");return}
-  $("go").disabled=true;$("status").hidden=false;$("result").hidden=true;
-  try{
-    const r=await fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({story})});
-    const d=await r.json(); if(!r.ok) throw new Error(d.error||"Could not start");
-    poll(d.jobId);
-  }catch(e){$("msg").textContent=e.message;$("go").disabled=false}
+/* Browser-side StoryToon: scene splitting, Canvas animation, TTS, MediaRecorder.
+   See README for usage. */
+
+// Config
+const MAX_SCENES = 6;
+const CANVAS_W = 1280;
+const CANVAS_H = 720;
+const FPS = 30;
+
+// DOM
+const storyInput = document.getElementById('storyInput');
+const generateBtn = document.getElementById('generateBtn');
+const playBtn = document.getElementById('playBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const restartBtn = document.getElementById('restartBtn');
+const recordBtn = document.getElementById('recordBtn');
+const downloadLink = document.getElementById('downloadLink');
+const stages = document.getElementById('scenes');
+const speechStatus = document.getElementById('speechStatus');
+
+const canvas = document.getElementById('stage');
+const ctx = canvas.getContext('2d');
+
+// HiDPI
+function resizeCanvasForDisplay() {
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = CANVAS_W * ratio;
+  canvas.height = CANVAS_H * ratio;
+  canvas.style.width = CANVAS_W / (ratio) + 'px';
+  canvas.style.height = CANVAS_H / (ratio) + 'px';
+  ctx.setTransform(ratio,0,0,ratio,0,0);
 }
-async function poll(id){
-  const r=await fetch("/api/jobs/"+id); const d=await r.json();
-  $("msg").textContent=d.message||d.status;
-  $("fill").style.width=(d.progress||0)+"%"; $("percent").textContent=(d.progress||0)+"%";
-  if(d.status==="completed"){
-    $("video").src=d.video; $("download").href=d.video; $("download").download="storytoon.mp4";
-    $("title").textContent=d.title||"Your video";
-    $("result").hidden=false; $("go").disabled=false;
-    $("scenes").innerHTML=(d.scenes||[]).map((s,i)=>`<div class="scene"><b>Scene ${i+1}: ${s.title}</b><div class="small">${s.dialogue||""}</div></div>`).join("");
-    return;
+resizeCanvasForDisplay();
+window.addEventListener('resize', resizeCanvasForDisplay);
+
+let sceneStates = [];
+let currentSceneIndex = 0;
+let playing = false;
+let rafId = null;
+let lastTick = 0;
+let recorder = null;
+let recordedBlobs = [];
+
+// Scene splitting
+function splitIntoScenes(text) {
+  if (!text) return [];
+  text = text.replace(/\s+/g, ' ').trim();
+  let parts = text.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+  if (parts.length === 1) parts = text.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
+  if (parts.length > MAX_SCENES) {
+    const per = Math.ceil(parts.length / MAX_SCENES);
+    const out = [];
+    for (let i=0;i<parts.length;i+=per) out.push(parts.slice(i,i+per).join(' '));
+    parts = out;
   }
-  if(d.status==="failed"){ $("go").disabled=false; return; }
-  setTimeout(()=>poll(id),5000);
+  return parts.slice(0,MAX_SCENES).map((p,i) => ({
+    id: i,
+    title: p.split(/[.!?]/)[0].slice(0,60),
+    text: p,
+    duration: 4000 + Math.min(8000, p.length * 60)
+  }));
 }
-$("go").onclick=start;
+
+function makeCharactersForScene(idx) {
+  const palette = [["#ffb4a2","#ff8fab"],["#9bf6ff","#74e3ff"],["#ffd6a5","#ffb067"],["#caffbf","#9fff86"]];
+  const pair = palette[idx % palette.length];
+  return [
+    { name: "Alice", x: 200, y: 460, size: 80, color: pair[0], dir: 1 },
+    { name: "Bot", x: 920, y: 480, size: 74, color: pair[1], dir: -1 }
+  ];
+}
+
+function createSceneState(scene) {
+  return {
+    scene,
+    chars: makeCharactersForScene(scene.id),
+    progress: 0,
+    camera: { x: 0, y: 0, zoom: 1 },
+    startedAt: null,
+    finished: false,
+    bgSeed: (scene.id * 9301) % 1000
+  };
+}
+
+function drawBackground(ctx, seed) {
+  const g = ctx.createLinearGradient(0,0,0,CANVAS_H);
+  g.addColorStop(0, '#0b2230');
+  g.addColorStop(1, '#09202a');
+  ctx.fillStyle = g; ctx.fillRect(0,0,CANVAS_W,CANVAS_H);
+  const t = (seed % 10) / 10;
+  ctx.fillStyle = '#072c36'; ctx.beginPath();
+  ctx.ellipse(640, 820 + t*40, 900, 200, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#073a43'; ctx.beginPath();
+  ctx.ellipse(320, 820 + t*10, 500, 160, 0, 0, Math.PI*2); ctx.fill();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function drawCharacter(ctx, ch, t) {
+  const bob = Math.sin(t/200) * 6;
+  const x = ch.x, y = ch.y + bob, s = ch.size;
+  ctx.fillStyle = ch.color; roundRect(ctx, x - s/2, y - s/2, s, s*0.8, s*0.15); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y - s*0.65, s*0.38, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#071024'; ctx.beginPath(); ctx.arc(x - s*0.12, y - s*0.68, s*0.06, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + s*0.12, y - s*0.68, s*0.06, 0, Math.PI*2); ctx.fill();
+}
+
+function drawSpeech(ctx, x, y, text, align='left') {
+  const padding = 12;
+  ctx.font = "18px system-ui, Arial";
+  const w = Math.min(520, ctx.measureText(text).width + padding*2);
+  const h = 32;
+  const bx = (align==='left') ? x - 10 : x - w + 10;
+  const by = y - 120;
+  ctx.fillStyle = 'rgba(255,255,255,0.92)'; roundRect(ctx, bx, by, w, h, 12); ctx.fill();
+  ctx.fillStyle = '#071024'; ctx.fillText(text, bx + 12, by + 22);
+}
+
+function buildSceneStates(rawScenes) { return rawScenes.map(s => createSceneState(s)); }
+function escapeHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function renderSceneList(rawScenes) {
+  stages.innerHTML = "";
+  rawScenes.forEach((s,i) => {
+    const el = document.createElement('div'); el.className = 'scene';
+    el.innerHTML = `<strong>Scene ${i+1}:</strong> ${escapeHtml(s.title)}<div class="small">${escapeHtml(s.text)}</div>`;
+    stages.appendChild(el);
+  });
+}
+
+function startPreview() {
+  if (!sceneStates.length) return;
+  playing = true; lastTick = performance.now(); currentSceneIndex = 0;
+  sceneStates.forEach(st => { st.startedAt = null; st.finished = false; st.progress = 0; });
+  if (!rafId) rafId = requestAnimationFrame(loop);
+}
+function pausePreview() { playing = false; if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
+function restartPreview() { pausePreview(); currentSceneIndex = 0; sceneStates.forEach(st => { st.startedAt = null; st.finished = false; st.progress = 0; }); startPreview(); }
+
+function loop(now) {
+  const state = sceneStates[currentSceneIndex];
+  if (!state) { playing = false; rafId = null; return; }
+  if (state.startedAt === null) state.startedAt = now;
+  const elapsed = now - state.startedAt;
+  const t = elapsed;
+  state.chars.forEach(ch => { ch.x += 0.05 * ch.dir * (1 + Math.sin(t/1000)); if (ch.x < 80) ch.dir = Math.abs(ch.dir); if (ch.x > CANVAS_W - 80) ch.dir = -Math.abs(ch.dir); });
+  state.camera.x = Math.sin((state.scene.id + 1) * 0.5 + t/4000) * 40;
+  state.camera.zoom = 1 + Math.sin(t/5000) * 0.03;
+  drawScene(ctx, state, t);
+  if (elapsed > 200 && !state._spoken) { speakText(state.scene.text); state._spoken = true; }
+  state.progress = Math.min(1, elapsed / state.scene.duration);
+  if (elapsed >= state.scene.duration) {
+    state.finished = true; currentSceneIndex++;
+    if (currentSceneIndex >= sceneStates.length) { playing = false; rafId = null; return; }
+    else { sceneStates[currentSceneIndex].startedAt = now; }
+  }
+  if (playing) rafId = requestAnimationFrame(loop);
+}
+
+function drawScene(ctx, state, t) {
+  ctx.save(); ctx.clearRect(0,0,CANVAS_W,CANVAS_H);
+  ctx.translate(state.camera.x, state.camera.y); ctx.scale(state.camera.zoom, state.camera.zoom);
+  drawBackground(ctx, state.bgSeed);
+  ctx.fillStyle = '#081a1f'; ctx.fillRect(0,540, CANVAS_W, 220);
+  state.chars.forEach(ch => drawCharacter(ctx, ch, t));
+  drawSpeech(ctx, state.chars[0].x, state.chars[0].y - 40, truncateText(state.scene.text, 60), 'left');
+  ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(16,16,420,42);
+  ctx.fillStyle = '#fff'; ctx.font = '20px system-ui'; ctx.fillText(state.scene.title, 28, 42);
+  ctx.restore();
+}
+
+function truncateText(s, max) { if (s.length <= max) return s; return s.slice(0,max-1) + '…'; }
+
+function speakText(text) {
+  if (!('speechSynthesis' in window)) { speechStatus.textContent = 'speech unavailable'; return; }
+  const utter = new SpeechSynthesisUtterance(text); utter.rate = 1.0; utter.pitch = 1;
+  utter.onstart = () => { speechStatus.textContent = 'speaking'; }; utter.onend = () => { speechStatus.textContent = 'ready'; };
+  speechSynthesis.cancel(); speechSynthesis.speak(utter);
+}
+
+function startRecording() {
+  recordedBlobs = [];
+  const stream = canvas.captureStream(FPS);
+  try { recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' }); }
+  catch (e) { try { recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' }); } catch (e2) { recorder = new MediaRecorder(stream); } }
+  recorder.ondataavailable = (ev) => { if (ev.data && ev.data.size) recordedBlobs.push(ev.data); };
+  recorder.onstop = () => {
+    const blob = new Blob(recordedBlobs, { type: 'video/webm' });
+    const url = window.URL.createObjectURL(blob);
+    downloadLink.href = url;
+    downloadLink.download = `storytoon-${Date.now()}.webm`;
+    downloadLink.style.display = 'inline-block';
+    downloadLink.textContent = 'Download recording';
+  };
+  recorder.start(); recordBtn.textContent = 'Stop Recording';
+}
+
+function stopRecording() { if (recorder && recorder.state !== 'inactive') recorder.stop(); recorder = null; recordBtn.textContent = 'Record'; }
+
+generateBtn.addEventListener('click', () => {
+  const raw = storyInput.value.trim(); if (!raw) return alert('Enter a story');
+  const rawScenes = splitIntoScenes(raw); if (!rawScenes.length) return alert('Could not split story into scenes');
+  sceneStates = buildSceneStates(rawScenes); renderSceneList(rawScenes); restartPreview();
+});
+
+document.getElementById('playBtn').addEventListener('click', () => { if (!sceneStates.length) generateBtn.click(); if (!playing) { playing = true; if (!rafId) { lastTick = performance.now(); rafId = requestAnimationFrame(loop); } } });
+document.getElementById('pauseBtn').addEventListener('click', () => { pausePreview(); });
+document.getElementById('restartBtn').addEventListener('click', () => restartPreview());
+document.getElementById('recordBtn').addEventListener('click', async () => { if (recorder && recorder.state === 'recording') { stopRecording(); return; } if (!playing) restartPreview(); startRecording(); });
+
+storyInput.value = `A curious inventor finds a glowing portal inside a closet and steps through.
+They arrive in a tiny city run by clever toy-robots that trade jokes for spare screws.
+A sudden thunder of gears threatens the city; our inventor and a plucky robot must work together to save the day.
+In the end they fix the great clock and the city's lights twinkle like stars, and the inventor returns home, nostalgic and smiling.`;
+
+downloadLink.style.display = 'none';
+fetch('/api/health').then(r => r.json().catch(()=>null)).then(j=>{console.log('health', j)}).catch(()=>{});
+window.addEventListener('beforeunload', () => { if ('speechSynthesis' in window) speechSynthesis.cancel(); });
 </script>
 </body>
 </html>
