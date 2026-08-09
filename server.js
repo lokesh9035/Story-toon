@@ -181,8 +181,9 @@ app.get("/api/jobs/:id", (req, res) => {
   });
 });
 
-// Catch-all for API routes - always return JSON
-app.all('/api/*', (req, res) => {
+// Express 5 compatible catch-all for API routes - always return JSON
+// This MUST appear AFTER all valid /api routes above
+app.use('/api', (req, res) => {
   res.status(404).json({ error: 'API route not found', path: req.originalUrl });
 });
 
