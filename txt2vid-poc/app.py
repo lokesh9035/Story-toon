@@ -1,10 +1,15 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import uuid, asyncio, os, subprocess, shlex, time, re
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 app = FastAPI()
 JOBS = {}
+
+# Root endpoint for health checks / probes
+@app.get("/", include_in_schema=False)
+def root():
+    return JSONResponse({"ok": True, "service": "txt2vid-poc"}, status_code=200)
 
 # Environment configuration for real model integration
 TEXT2VIDEO_CMD = os.environ.get("TEXT2VIDEO_CMD", "")
